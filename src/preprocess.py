@@ -1,7 +1,9 @@
 import mne
 import numpy as np
 
-from load import load_subject
+from load import RUNS, load_subject
+
+SUBJECTS = range(1, 11)
 
 
 def bandpass_filter(raw):
@@ -74,24 +76,43 @@ def prepare_run(raw, events):
     return data.astype(np.float32), labels.astype(np.int64)
 
 
+def prepare_subject(subject, runs=RUNS):
+    X_runs = []
+    y_runs = []
+
+    for raw, events in load_subject(subject, runs):
+        data, labels = prepare_run(raw, events)
+
+        X_runs.append(data)
+        y_runs.append(labels)
+
+    return np.concatenate(X_runs), np.concatenate(y_runs)
+
+
+def prepare_dataset(subjects=SUBJECTS, runs=RUNS):
+    X_subjects = []
+    y_subjects = []
+    groups_subjects = []
+
+    for subject in subjects:
+        X, y = prepare_subject(subject, runs)
+
+        X_subjects.append(X)
+        y_subjects.append(y)
+        groups_subjects.append(np.full(len(y), subject, dtype=np.int64))
+
+    X = np.concatenate(X_subjects)
+    y = np.concatenate(y_subjects)
+    groups = np.concatenate(groups_subjects)
+
+    return X, y, groups
+
+
 if __name__ == "__main__":
-    run4, events4, run8, events8 = load_subject(
-        "data/Subjects/S001R04.edf",
-        "data/Subjects/S001R08.edf"
-    )
+    X, y, groups = prepare_dataset()
 
-    X4, y4 = prepare_run(
-        run4,
-        events4
-    )
-
-    X8, y8 = prepare_run(
-        run8,
-        events8
-    )
-
-    print("Run 4:", X4.shape, y4.shape)
-    print("Run 8:", X8.shape, y8.shape)
-
-    print("Run 4 labels:", y4)
-    print("Run 8 labels:", y8)
+    print("X:", X.shape)
+    print("y:", y.shape)
+    print("groups:", groups.shape)
+    print("Subjects:", np.unique(groups))
+    print("Class balance:", np.bincount(y))

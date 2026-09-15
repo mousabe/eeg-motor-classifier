@@ -1,27 +1,29 @@
+from pathlib import Path
+
 import mne
 
-def load_subject(run4_path, run8_path): 
+DATA_DIR = Path("data/Subjects")
+RUNS = [4, 8, 12]
 
-    run4 = mne.io.read_raw_edf(str(run4_path), preload=True, verbose=False)
-    run8 = mne.io.read_raw_edf(str(run8_path), preload=True, verbose=False)
 
-    events4, _ = mne.events_from_annotations(run4)
-    events8, _ = mne.events_from_annotations(run8)
+def run_path(subject, run):
+    return DATA_DIR / f"S{subject:03d}R{run:02d}.edf"
 
-    return run4, events4, run8, events8
+
+def load_run(subject, run):
+    raw = mne.io.read_raw_edf(str(run_path(subject, run)), preload=True, verbose=False)
+    events, _ = mne.events_from_annotations(raw, verbose=False)
+
+    return raw, events
+
+
+def load_subject(subject, runs=RUNS):
+    return [load_run(subject, run) for run in runs]
 
 
 if __name__ == "__main__":
-    subject_1_run4 = "data/Subjects/S001R04.edf"
-    subject_1_run8 = "data/Subjects/S001R08.edf"
+    runs = load_subject(1)
 
-    run4, events4, run8, events8 = load_subject(
-        subject_1_run4,
-        subject_1_run8
-    )
-
-    print("Run 4:", run4)
-    print("Run 4 events:", events4)
-
-    print("Run 8:", run8)
-    print("Run 8 events:", events8)
+    for run_number, (raw, events) in zip(RUNS, runs):
+        print(f"Run {run_number}:", raw)
+        print(f"Run {run_number} events:", events)
