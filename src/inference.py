@@ -8,9 +8,9 @@ from model import EEGCNN
 
 
 def inference():
-    run4, events4, _, _ = load_subject(
-        "data/Subjects/S001R04.edf",
-        "data/Subjects/S001R08.edf"
+    (run4, events4), = load_subject(
+        1,
+        runs=[4]
     )
 
     X, y = prepare_run(

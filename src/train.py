@@ -1,50 +1,30 @@
 import os
 
-import numpy as np
 import torch
 import torch.nn as nn
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit
 from torch.utils.data import DataLoader, TensorDataset
 
-from load import load_subject
-from preprocess import prepare_run
+from preprocess import prepare_dataset
 from model import EEGCNN
 
 
 def train():
-    (run4, events4), (run8, events8) = load_subject(
-        1,
-        runs=[4, 8]
-    )
+    X, y, groups = prepare_dataset()
 
-    X4, y4 = prepare_run(
-        run4,
-        events4
-    )
-
-    X8, y8 = prepare_run(
-        run8,
-        events8
-    )
-
-    X = np.concatenate(
-        [X4, X8],
-        axis=0
-    )
-
-    y = np.concatenate(
-        [y4, y8],
-        axis=0
-    )
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
+    splitter = GroupShuffleSplit(
+        n_splits=1,
         test_size=0.25,
-        random_state=42,
-        stratify=y
+        random_state=42
     )
+
+    train_idx, test_idx = next(
+        splitter.split(X, y, groups)
+    )
+
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
 
     X_train = torch.tensor(
         X_train,

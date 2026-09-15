@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 from sklearn.metrics import (
@@ -6,37 +5,26 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix
 )
+from sklearn.model_selection import GroupShuffleSplit
 
-from load import load_subject
-from preprocess import prepare_run
+from preprocess import prepare_dataset
 from model import EEGCNN
 
 
 def evaluate():
-    (run4, events4), (run8, events8) = load_subject(
-        1,
-        runs=[4, 8]
+    X, y, groups = prepare_dataset()
+
+    splitter = GroupShuffleSplit(
+        n_splits=1,
+        test_size=0.25,
+        random_state=42
     )
 
-    X4, y4 = prepare_run(
-        run4,
-        events4
+    _, test_idx = next(
+        splitter.split(X, y, groups)
     )
 
-    X8, y8 = prepare_run(
-        run8,
-        events8
-    )
-
-    X = np.concatenate(
-        [X4, X8],
-        axis=0
-    )
-
-    y = np.concatenate(
-        [y4, y8],
-        axis=0
-    )
+    X_test, y_test = X[test_idx], y[test_idx]
 
     checkpoint = torch.load(
         "models/eeg_cnn.pt",
@@ -54,7 +42,7 @@ def evaluate():
     model.eval()
 
     X_tensor = torch.tensor(
-        X,
+        X_test,
         dtype=torch.float32
     )
 
@@ -68,7 +56,7 @@ def evaluate():
     print(
         "Accuracy:",
         accuracy_score(
-            y,
+            y_test,
             predictions
         )
     )
@@ -77,7 +65,7 @@ def evaluate():
 
     print(
         classification_report(
-            y,
+            y_test,
             predictions,
             target_names=[
                 "Left",
@@ -90,7 +78,7 @@ def evaluate():
 
     print(
         confusion_matrix(
-            y,
+            y_test,
             predictions
         )
     )
