@@ -13,9 +13,9 @@ from model import EEGCNN
 
 
 def train():
-    run4, events4, run8, events8 = load_subject(
-        "data/Subjects/S001R04.edf",
-        "data/Subjects/S001R08.edf"
+    (run4, events4), (run8, events8) = load_subject(
+        1,
+        runs=[4, 8]
     )
 
     X4, y4 = prepare_run(
